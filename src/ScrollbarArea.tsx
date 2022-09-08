@@ -97,9 +97,9 @@ const ScrollbarArea: Component<IScrollbarAreaProps> = (props) => {
   }
 
   function handleThumbPointerMove(evt: PointerEvent) {
-    evt.preventDefault();
-    evt.stopPropagation();
     if (isDragging() && contentRef) {
+      evt.preventDefault();
+      evt.stopPropagation();
       const {
         scrollHeight: contentScrollHeight,
         offsetHeight: contentOffsetHeight,
@@ -118,12 +118,10 @@ const ScrollbarArea: Component<IScrollbarAreaProps> = (props) => {
       handleResize(contentRef, trackSize);
     });
     observer.observe(contentRef);
-    contentRef.addEventListener('scroll', handleThumbPosition);
   });
 
   onCleanup(() => {
     observer.unobserve(contentRef);
-    contentRef.removeEventListener('scroll', handleThumbPosition);
   });
 
   return (
@@ -135,7 +133,7 @@ const ScrollbarArea: Component<IScrollbarAreaProps> = (props) => {
       onPointerUp={handleThumbPointerUpOrLeave}
     >
       <div class="ScrollbarArea__wrapper">
-        <div class="ScrollbarArea__content" ref={contentRef}>
+        <div class="ScrollbarArea__content" ref={contentRef} onScroll={handleThumbPosition}>
           {props.children}
         </div>
       </div>
