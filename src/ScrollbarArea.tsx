@@ -5,6 +5,8 @@ import {
   onCleanup,
   JSXElement,
 } from 'solid-js';
+import { nanoid } from 'nanoid';
+
 import './ScrollbarArea.scss';
 
 interface IScrollbarAreaProps {
@@ -12,7 +14,7 @@ interface IScrollbarAreaProps {
 }
 
 const ScrollbarArea: Component<IScrollbarAreaProps> = (props) => {
-  let contentRef: HTMLDivElement;
+  let viewportRef: HTMLDivElement;
   let scrollTrackRef: HTMLDivElement;
   let scrollThumbRef: HTMLDivElement;
   let observer: ResizeObserver;
@@ -20,12 +22,14 @@ const ScrollbarArea: Component<IScrollbarAreaProps> = (props) => {
   const [isDragging, setIsDragging] = createSignal<boolean>(false);
   const [scrollStartPosition, setScrollStartPosition] = createSignal<number>(0);
   const [initialScrollTop, setInitialScrollTop] = createSignal<number>(0);
+  const [viewportID] = createSignal<string>(nanoid());
+  const [scrollPosition, setScrollPosition] = createSignal<number>(0);
 
   function handleWheel(evt: WheelEvent) {
     evt.preventDefault();
     evt.stopPropagation();
-    if (contentRef) {
-      contentRef.scrollBy({
+    if (viewportRef) {
+      viewportRef.scrollBy({
         top: evt.deltaY,
         behavior: 'smooth',
       });
@@ -38,11 +42,11 @@ const ScrollbarArea: Component<IScrollbarAreaProps> = (props) => {
   }
 
   function handleThumbPosition() {
-    if (contentRef && scrollTrackRef && scrollThumbRef) {
+    if (viewportRef && scrollTrackRef && scrollThumbRef) {
       const {
         scrollTop: contentTop,
         scrollHeight: contentHeight,
-      } = contentRef;
+      } = viewportRef;
       const {
         clientHeight: trackHeight,
       } = scrollTrackRef;
@@ -50,6 +54,9 @@ const ScrollbarArea: Component<IScrollbarAreaProps> = (props) => {
         (contentTop / contentHeight) * trackHeight,
         trackHeight - thumbHeight(),
       );
+      const newScrollPosition = scrollThumbRef.offsetTop
+        / Math.floor(trackHeight - thumbHeight()) * 100;
+      setScrollPosition(newScrollPosition);
       scrollThumbRef.style.top = `${newTop}px`;
     }
   }
@@ -58,15 +65,15 @@ const ScrollbarArea: Component<IScrollbarAreaProps> = (props) => {
     evt.preventDefault();
     evt.stopPropagation();
 
-    if (scrollTrackRef && contentRef) {
+    if (scrollTrackRef && viewportRef) {
       const { clientY } = evt;
       const target = evt.target as HTMLDivElement;
       const rect = target.getBoundingClientRect();
       const trackTop = rect.top;
       const thumbOffset = -(thumbHeight() / 2);
       const clickRatio = (clientY - trackTop + thumbOffset) / scrollTrackRef.clientHeight;
-      const scrollAmount = Math.floor(clickRatio * contentRef.scrollHeight);
-      contentRef.scrollTo({
+      const scrollAmount = Math.floor(clickRatio * viewportRef.scrollHeight);
+      viewportRef.scrollTo({
         top: scrollAmount,
         behavior: 'smooth',
       });
@@ -80,8 +87,8 @@ const ScrollbarArea: Component<IScrollbarAreaProps> = (props) => {
     evt.preventDefault();
     evt.stopPropagation();
     setScrollStartPosition(evt.clientY);
-    if (contentRef) {
-      setInitialScrollTop(contentRef.scrollTop);
+    if (viewportRef) {
+      setInitialScrollTop(viewportRef.scrollTop);
     }
     setIsDragging(true);
   }
@@ -97,15 +104,15 @@ const ScrollbarArea: Component<IScrollbarAreaProps> = (props) => {
   }
 
   function handleThumbPointerMove(evt: PointerEvent) {
-    if (isDragging() && contentRef) {
+    if (isDragging() && viewportRef) {
       evt.preventDefault();
       evt.stopPropagation();
       const {
         scrollHeight: contentScrollHeight,
         offsetHeight: contentOffsetHeight,
-      } = contentRef;
+      } = viewportRef;
       const deltaY = (evt.clientY - scrollStartPosition()) * (contentOffsetHeight / thumbHeight());
-      contentRef.scrollTop = Math.min(
+      viewportRef.scrollTop = Math.min(
         initialScrollTop() + deltaY,
         contentScrollHeight - contentOffsetHeight,
       );
@@ -115,13 +122,13 @@ const ScrollbarArea: Component<IScrollbarAreaProps> = (props) => {
   onMount(() => {
     const { clientHeight: trackSize } = scrollTrackRef;
     observer = new ResizeObserver(() => {
-      handleResize(contentRef, trackSize);
+      handleResize(viewportRef, trackSize);
     });
-    observer.observe(contentRef);
+    observer.observe(viewportRef);
   });
 
   onCleanup(() => {
-    observer.unobserve(contentRef);
+    observer.unobserve(viewportRef);
   });
 
   return (
@@ -133,11 +140,23 @@ const ScrollbarArea: Component<IScrollbarAreaProps> = (props) => {
       onPointerUp={handleThumbPointerUpOrLeave}
     >
       <div class="ScrollbarArea__wrapper">
-        <div class="ScrollbarArea__content" ref={contentRef} onScroll={handleThumbPosition}>
+        <div
+          class="ScrollbarArea__viewport"
+          id={viewportID()}
+          role="document"
+          ref={viewportRef}
+          onScroll={handleThumbPosition}
+        >
           {props.children}
         </div>
       </div>
-      <div class="ScrollbarArea__scrollbar">
+      <div
+        class="ScrollbarArea__scrollbar"
+        role="scrollbar"
+        aria-controls={viewportID()}
+        aria-valuenow={scrollPosition()}
+        aria-orientation="vertical"
+      >
         <div
           class="ScrollbarArea__scrollbar-track"
           ref={scrollTrackRef}

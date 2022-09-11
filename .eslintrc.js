@@ -6,7 +6,8 @@ module.exports = {
   extends: [
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
-    'plugin:solid/recommended',
+    'plugin:solid/typescript',
+    'plugin:jsx-a11y/recommended',
     'plugin:jest/recommended',
   ],
   parser: '@typescript-eslint/parser',
