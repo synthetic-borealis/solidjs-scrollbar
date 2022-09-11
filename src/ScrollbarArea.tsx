@@ -1,10 +1,4 @@
-import {
-  Component,
-  createSignal,
-  onMount,
-  onCleanup,
-  JSXElement,
-} from 'solid-js';
+import { Component, createSignal, onMount, onCleanup, JSXElement } from 'solid-js';
 import { nanoid } from 'nanoid';
 
 import './ScrollbarArea.scss';
@@ -43,19 +37,14 @@ const ScrollbarArea: Component<IScrollbarAreaProps> = (props) => {
 
   function handleThumbPosition() {
     if (viewportRef && scrollTrackRef && scrollThumbRef) {
-      const {
-        scrollTop: contentTop,
-        scrollHeight: contentHeight,
-      } = viewportRef;
-      const {
-        clientHeight: trackHeight,
-      } = scrollTrackRef;
+      const { scrollTop: contentTop, scrollHeight: contentHeight } = viewportRef;
+      const { clientHeight: trackHeight } = scrollTrackRef;
       const newTop = Math.min(
         (contentTop / contentHeight) * trackHeight,
         trackHeight - thumbHeight(),
       );
-      const newScrollPosition = scrollThumbRef.offsetTop
-        / Math.floor(trackHeight - thumbHeight()) * 100;
+      const newScrollPosition =
+        (scrollThumbRef.offsetTop / Math.floor(trackHeight - thumbHeight())) * 100;
       setScrollPosition(newScrollPosition);
       scrollThumbRef.style.top = `${newTop}px`;
     }
@@ -107,10 +96,7 @@ const ScrollbarArea: Component<IScrollbarAreaProps> = (props) => {
     if (isDragging() && viewportRef) {
       evt.preventDefault();
       evt.stopPropagation();
-      const {
-        scrollHeight: contentScrollHeight,
-        offsetHeight: contentOffsetHeight,
-      } = viewportRef;
+      const { scrollHeight: contentScrollHeight, offsetHeight: contentOffsetHeight } = viewportRef;
       const deltaY = (evt.clientY - scrollStartPosition()) * (contentOffsetHeight / thumbHeight());
       viewportRef.scrollTop = Math.min(
         initialScrollTop() + deltaY,
